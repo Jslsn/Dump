@@ -10,7 +10,7 @@ while getopts "o:n:" opt; do
 			;;
 		*)
 			echo "Please provide both the old volume type through -o and the new one you'd like to mass switch to using -n."
-		    exit 1
+			exit 1
 	esac
 done
 
