@@ -4,7 +4,7 @@ This is a basic site, I've designed it with availability, fault tolerance, and s
 
 ## For Deployment
 
-### Requirments
+### Requirements
 
 None right now! Just Terraform :)
 
