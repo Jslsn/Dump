@@ -2,13 +2,10 @@
 
 This is a basic site, I've designed it with availability, fault tolerance, and security in mind. Redeployability and making it something that can be easily modified for said redeployments are also things I've taken into consideration(At least in later updates).
 
-## For Deployment
+## Versions
 
-### Requirements
+There are two versions of this deployment, one is more secure as it forces https traffic, one is less so as it goes through http.
 
-None right now! Just Terraform :)
 
-### Deploying
-To Deploy:
-- Run a terraform init in the terraform directory.
-- In the same directory, run terraform apply.
+## Deploment
+These versions have different requirements, so each terraform directory will have it's own instructions.
