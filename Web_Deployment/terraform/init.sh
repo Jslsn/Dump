@@ -1,4 +1,6 @@
 #!/bin/bash
+public_image=jslsn/web_deployment:webcontainerv4
+
 sudo yum update -yum
 
 sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
@@ -11,7 +13,6 @@ sudo systemctl enable docker.service
 
 sudo systemctl start docker.service
 
-sudo docker pull jslsn/web_deployment:webcontainerv4
+sudo docker pull ${public_image}
 
-sudo docker run --name jl_web_deployment -p 80:80 jslsn/web_deployment:webcontainerv4
-
+sudo docker run --name jl_web_deployment -p 80:80 ${public_image}

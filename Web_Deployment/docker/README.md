@@ -8,4 +8,4 @@ If you want to launch your own version of the site on this same architecture:
 
 - Run a docker build and push it to a public repository.
 
-- Update the init.sh to pull and run your container on lines 14 and 16 respectively.
+- Update the init.sh to pull and run your container by entering your full image tag on line 2.
