@@ -56,7 +56,7 @@ resource "aws_route_table" "public_route_table" {
   }
   tags = {
     Name        = "public_facing_route_table"
-    Description = "Creates a route table to route traffic from the public subnet to the internet."
+    Description = "Routes traffic from the public subnets to the internet."
     Terraform   = true
   }
 }
@@ -112,24 +112,24 @@ resource "aws_security_group" "allow_web_connect_alb" {
   }
 
   ingress {
-    from_port         = 443
-    to_port           = 443
-    protocol          = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port         = 80
-    to_port           = 80
-    protocol          = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port         = -1
-    to_port           = -1
-    protocol          = "all"
-    cidr_blocks       = ["0.0.0.0/0"]
+    from_port   = -1
+    to_port     = -1
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -155,17 +155,17 @@ resource "aws_security_group" "instance_sg" {
   }
 
   ingress {
-    from_port                = 80
-    to_port                  = 80
-    protocol                 = "tcp"
-    security_groups = [ aws_security_group.allow_web_connect_alb.id ]
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.allow_web_connect_alb.id]
   }
 
   egress {
-    from_port         = -1
-    to_port           = -1
-    protocol          = "all"
-    cidr_blocks       = ["0.0.0.0/0"]
+    from_port   = -1
+    to_port     = -1
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -219,14 +219,14 @@ resource "tls_private_key" "private_key" {
 }
 
 resource "aws_key_pair" "key_pair" {
-  key_name   = "instance_key_pair"       
+  key_name   = "instance_key_pair"
   public_key = tls_private_key.private_key.public_key_openssh
 }
 
 resource "local_sensitive_file" "pem_file" {
-  filename = "instance_priv_key.pem"
+  filename        = "instance_priv_key.pem"
   file_permission = "400"
-  content = tls_private_key.private_key.private_key_pem
+  content         = tls_private_key.private_key.private_key_pem
 }
 
 #A launch template will use the ami, profile and security group and launch with some user data to get everything set up.
