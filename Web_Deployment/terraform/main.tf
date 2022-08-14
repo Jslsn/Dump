@@ -55,8 +55,8 @@ resource "aws_route_table" "public_route_table" {
     gateway_id = aws_internet_gateway.internet_gateway.id
   }
   tags = {
-    Name        = "public_facing_route_table"
-    Description = "Creates a route table to route traffic from the public subnet to the internet."
+    name        = "public_facing_route_table"
+    Description = "Routes traffic from the public subnets to the internet."
     Terraform   = true
   }
 }
@@ -110,24 +110,20 @@ resource "aws_security_group" "allow_web_connect_alb" {
     Name      = "alb_sg"
     Terraform = true
   }
-}
 
-resource "aws_security_group_rule" "allow_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.allow_web_connect_alb.id
-}
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-resource "aws_security_group_rule" "allow_outbound_alb_sg" {
-  type              = "egress"
-  from_port         = -1
-  to_port           = -1
-  protocol          = "all"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.allow_web_connect_alb.id
+  egress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 #The alb will serve out the load from the public subnets to the instances in private subnets.
@@ -150,24 +146,20 @@ resource "aws_security_group" "instance_sg" {
     Name      = "instance_sg"
     Terraform = true
   }
-}
 
-resource "aws_security_group_rule" "allow_outbound_instance_sg" {
-  type              = "egress"
-  from_port         = -1
-  to_port           = -1
-  protocol          = "all"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.instance_sg.id
-}
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.allow_web_connect_alb.id]
+  }
 
-resource "aws_security_group_rule" "alb_to_instance_http" {
-  type                     = "ingress"
-  from_port                = 80
-  to_port                  = 80
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.allow_web_connect_alb.id
-  security_group_id        = aws_security_group.instance_sg.id
+  egress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 #Get the latest amazon linux ami and store it's info.
@@ -202,14 +194,32 @@ resource "aws_iam_role" "instance_role" {
   managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
 
   tags = {
-    name        = "instance_role"
-    description = "Allows the instance to use session manager."
+    Name        = "instance_role"
+    Description = "Allows the instance to use session manager."
   }
 }
 
 resource "aws_iam_instance_profile" "web_instance_profile" {
   name = "web_instance_profile"
   role = aws_iam_role.instance_role.name
+}
+
+/* Although we aren't allowing ssh on these instances, adding an ssh key to instances 
+is still best practice and should probably be done regardless*/
+resource "tls_private_key" "private_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "key_pair" {
+  key_name   = "instance_key_pair"
+  public_key = tls_private_key.private_key.public_key_openssh
+}
+
+resource "local_sensitive_file" "pem_file" {
+  filename        = "instance_priv_key.pem"
+  file_permission = "400"
+  content         = tls_private_key.private_key.private_key_pem
 }
 
 #A launch template will use the ami, profile and security group and launch with some user data to get everything set up.
@@ -257,6 +267,11 @@ resource "aws_lb_target_group" "asg_tg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.vpc.id
+
+  tags = {
+    Name        = "autoScalingGroupTg"
+    Description = "A target group for the listener to point to the appropriate autoscaling groups."
+  }
 }
 
 resource "aws_autoscaling_attachment" "attach_sg_tg" {
