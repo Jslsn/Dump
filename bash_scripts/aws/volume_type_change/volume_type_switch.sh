@@ -3,7 +3,7 @@
 while getopts "o:n:" opt; do
 	case ${opt} in
 		o)
-		    oldtype=${OPTARG}
+			oldtype=${OPTARG}
 			;;
 		n)
 			newtype=${OPTARG}

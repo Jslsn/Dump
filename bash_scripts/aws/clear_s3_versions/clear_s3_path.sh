@@ -4,22 +4,22 @@ item=$true
    
 while getopts "b:p:" opt; do
 	case ${opt} in
-	     b)
-		    bucket=${OPTARG}
+		b)
+			bucket=${OPTARG}
 			;;
 		p)
 			path=${OPTARG}
 			;;
 		*)
 			echo "Please provide both a bucket using -b and a path/key in the bucket using -p."
-		    exit 1
+			exit 1
 	esac
 done
 				        
 if [ $OPTIND -eq 1 ]
 then
 	echo "No options were passed, please use both -b and -p to define the bucket and bucket path respectively."
-	     exit 1
+	exit 1
 fi
 	   
 echo "Collecting a list of versions from the ${path} path in the ${bucket} bucket..."
