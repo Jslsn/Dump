@@ -1,0 +1,7 @@
+version=0.1
+[default.deploy.parameters]
+stack_name="<stack-name>"
+s3_bucket="<bucket-to-store-template>"
+region="<region>"
+parameter_overrides = "TargetBucket=\"<bucket-name>\" SourcePath=\"<source-path>\" TargetPath=\"<target-path>\""
+capabilities="CAPABILITY_NAMED_IAM"

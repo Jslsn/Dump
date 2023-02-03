@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Creates a lambda function that monitors the running queries for a given cluster.
+
+Parameters:
+  SourcePath:
+    Type: String
+    Description: >-
+      The bucketpath  you want to replicate data from.
+  TargetBucket:
+    Type: String
+    Description: >-
+      The bucket you want to send data to.
+  IngestBucket:
+    Type: String
+    Description: >-
+      Name of the bucket you want to take data from.
+  TargetPath:
+    Type: String
+    Description: >-
+      The bucket path you want to send data to.
+
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  IngestS3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref IngestBucket
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  S3LambdaRole:
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Type: "AWS::IAM::Role"
+    Properties:
+      MaxSessionDuration: 43200
+      RoleName: !Sub ${AWS::StackName}-S3-check-role
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action: 'sts:AssumeRole'
+            Condition: {}
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-lambda-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:*"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "redshift-data:GetStatementResult"
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource:
+                  - !Sub arn:aws:s3:::${IngestBucket}/${SourcePath}/*
+                  - !Sub arn:aws:s3:::${TargetBucket}/${TargetPath}/*
+  S3Lambda:
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-S3-lambda
+      CodeUri: .
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt S3LambdaRole.Arn
+      Timeout: 120
+      Environment:
+        Variables:
+          SourceBucket: !Ref IngestBucket
+          TargetBucket: !Ref TargetBucket
+          SourcePath: !Ref SourcePath
+          TargetPath: !Ref TargetPath
+      Events:
+        S3PathTrigger:
+          Type: S3
+          Properties:
+            Bucket: !Ref IngestS3
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: prefix
+                  Value: !Ref SourcePath
+
