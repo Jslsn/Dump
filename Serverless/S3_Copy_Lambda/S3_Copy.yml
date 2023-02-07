@@ -14,11 +14,14 @@ Parameters:
   IngestBucket:
     Type: String
     Description: >-
-      Name of the bucket you want to take data from.
+      Name of the bucket you want to take data from(This can be left blank for an automatic name).
   TargetPath:
     Type: String
     Description: >-
       The bucket path you want to send data to.
+
+Conditions:
+  NamedIngestBucket: !Equals ["", !Ref IngestBucket]
 
 Transform: AWS::Serverless-2016-10-31
 
@@ -26,7 +29,7 @@ Resources:
   IngestS3:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref IngestBucket
+      BucketName: !If [NamedIngestBucket, !Ref IngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}']
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -81,7 +84,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          SourceBucket: !Ref IngestBucket
+          SourceBucket: !If [NamedIngestBucket, !Ref IngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}']
           TargetBucket: !Ref TargetBucket
           SourcePath: !Ref SourcePath
           TargetPath: !Ref TargetPath
