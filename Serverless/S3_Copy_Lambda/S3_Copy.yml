@@ -13,6 +13,7 @@ Parameters:
       The bucket you want to send data to.
   IngestBucket:
     Type: String
+    Default: "Automatically assign name."
     Description: >-
       Name of the bucket you want to take data from(This can be left blank for an automatic name).
   TargetPath:
@@ -21,7 +22,7 @@ Parameters:
       The bucket path you want to send data to.
 
 Conditions:
-  NamedIngestBucket: !Equals ["", !Ref IngestBucket]
+  NamedIngestBucket: !Equals ["Automatically assign name.", !Ref IngestBucket]
 
 Transform: AWS::Serverless-2016-10-31
 
@@ -29,7 +30,7 @@ Resources:
   IngestS3:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !If [NamedIngestBucket, !Ref IngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}']
+      BucketName: !If [NamedIngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}', !Ref IngestBucket]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -84,7 +85,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          SourceBucket: !If [NamedIngestBucket, !Ref IngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}']
+          SourceBucket: !If [NamedIngestBucket, !Sub 'ingest-bucket-${AWS::AccountId}-${AWS::StackName}', !Ref IngestBucket]
           TargetBucket: !Ref TargetBucket
           SourcePath: !Ref SourcePath
           TargetPath: !Ref TargetPath
