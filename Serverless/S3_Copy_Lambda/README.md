@@ -10,7 +10,7 @@ This template path will create a basic Lambda Function using AWS SAM. The Lambda
 
 - Slack Webhook is created
 
-- Install AWS SAM CLI - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install-mac.html
+- Install AWS SAM CLI - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html 
 
 ### Deploying:
    - Make a copy of the sample_samconfig.toml called samconfig.toml and fill it with the correct information <"Fill in anything within  marks like this">.
