@@ -1,0 +1,4 @@
+slack_sdk
+awslambdaric
+boto3
+datetime

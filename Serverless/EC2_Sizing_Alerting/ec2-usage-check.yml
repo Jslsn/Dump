@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Creates a lambda function that scans EC2 in the region it's in and alerts you
+  on any instances with continued low usage.
+
+Parameters:
+  DaysToMonitor:
+    Type: Number
+    Description: >-
+      Define how many days you want the value to compare against.
+    Default: 31
+    MinValue: 7
+  FrequencyOfCheck:
+    Type: Number
+    Description: >-
+      Define how often(in days) this Lambda should run a check on your instances.
+    Default: 7
+  SlackUrl:
+    Type: String
+    Description: >-
+      Give the slack url that you want the Lambda to utilise.
+  DefinedLowUsage:
+    Type: Number
+    Description: CPU Utilization % for the Lambda to mark it as "Low Usage".
+    Default: 5
+
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  EC2AlertLambda:
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-lambda
+      CodeUri: .
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt EC2AlertLambdaRole.Arn
+      Timeout: 120
+      Events:
+        EC2AlertLambdaTrigger:
+          Type: ScheduleV2
+          Properties:
+            Name: !Sub ${AWS::StackName}-trigger
+            Description: !Sub Trigger for the lambda deployed by the stack "${AWS::StackName}"
+            ScheduleExpression: !Sub rate(${FrequencyOfCheck} Days)
+      Environment:
+        Variables:
+          SlackUrl: !Ref SlackUrl
+          AWSAccount: !Ref AWS::AccountId
+          EventRule: !Sub ${AWS::StackName}-trigger
+          DefinedLowUsage: !Ref DefinedLowUsage
+          DaysToMonitor: !Ref DaysToMonitor
+    Metadata:
+      BuildMethod: makefile
+
+  EC2AlertLambdaRole:
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Type: "AWS::IAM::Role"
+    Properties:
+      MaxSessionDuration: 3600
+      RoleName: !Sub ${AWS::StackName}-lambda-role
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action: 'sts:AssumeRole'
+            Condition: {}
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-lambda-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:*"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "ec2:DescribeInstance*"
+                  - "cloudwatch:GetMetricData"
+                Resource:
+                  - '*'
+
